@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}{{title}}{% endblock%}
+
+{% block content %}
+<form method="post" enctype="multipart/form-data" class="position-absolute top-50 start-50 translate-middle">
+    {% csrf_token %}
+    {{ form.as_p }}
+  <button type="submit" class="btn btn-primary">Сохранить</button>
+</form>
+{% endblock %}

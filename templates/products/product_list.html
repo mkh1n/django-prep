@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+{% block title %}Товары{% endblock %}
+
+{% block content %}
+{% if user.is_team %}
+<form class="d-flex mt-3" role="search">
+    <input class="form-control me-2" type="search" id="search" placeholder="Поиск товаров.." />
+</form>
+<div class="d-flex mt-3">
+    <div class="input-group mb-3 w-50">
+        <select class="form-select" id="supplier">
+            <option selected>Все поставщики</option>
+            {% for supplier in suppliers %}
+            {% if supplier.name%}
+            <option value="{{supplier.name}}">{{supplier.name}}</option>
+            {% endif %}
+            {% endfor %}
+        </select>
+    </div>
+    <div class="input-group mb-3 w-50">
+        <select class="form-select" id="sort">
+            <option selected>По умолчанию</option>
+            <option value="asc">По складу (возр.)</option>
+            <option value="desc">По складу (убыв.)</option>
+        </select>
+    </div>
+</div>
+
+{% endif %}
+<table class="table">
+    <thead>
+        <tr>
+            <th scope="col">Фото</th>
+            <th scope="col">Наименование</th>
+            <th scope="col">Поставщик</th>
+            <th scope="col">Производитель</th>
+            <th scope="col">Категория товара</th>
+            <th scope="col">Кол-во на складе</th>
+            <th scope="col">Единица измерения</th>
+            <th scope="col">Описание товара</th>
+            <th scope="col">Цена</th>
+            <th scope="col">Действующая скидка</th>
+            {% if user.is_admin_user %}
+            <th scope="col">Действия</th>
+            {% endif %}
+        </tr>
+    </thead>
+    <tbody>
+        {% for product in products %}
+        <tr class="product-row {% if product.discount > 15 %} discount-row 
+                {% endif %} {% if product.stock_quantity == 0 %}outofstock-row{% endif %} " data-stock="{{product.stock_quantity}}"
+            data-supplier="{{product.supplier}}">
+            <td>
+                <img src="static/products/{{product.photo}}" class="img-thumbnail" alt="..."
+                    onerror="this.src = 'static/products/picture.png'">
+            </td>
+            <td>
+                {{product.name}}
+            </td>
+            <td>
+                {{product.supplier}}
+            </td>
+            <td>
+                {{product.manufacturer}}
+            </td>
+            <td>
+                {{product.category}}
+            </td>
+            <td>
+                {{product.stock_quantity}}
+            </td>
+            <td>
+                {{product.unit_type}}
+            </td>
+            <td>
+                {{product.description}}
+            </td>
+            <td>
+                {% if product.discount > 0 %}
+                <span class="price-old">{{product.price|floatformat:0}}</span>
+                <span class="price-new">{{product.price_after_discount|floatformat:0}}</span>
+                {% else %}
+                {{product.price|floatformat:0}}
+                {% endif %}
+            </td>
+            <td>
+                {{product.discount|floatformat:0}}%
+            </td>
+            {% if user.is_admin_user %}
+            <td>
+                <a href="{% url 'products:product_edit' product.pk%}">Изменить</a>
+                <a href="{% url 'products:product_delete' product.pk %}">удалить</a>
+            </td>
+
+            {% endif %}
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<script>
+    let productRows = Array.from(document.querySelectorAll('.product-row'))
+    function update() {
+        let query = document.getElementById('search').value.toLowerCase()
+        let sup = document.getElementById('supplier').value
+
+        let filtered = productRows.filter(row => {
+            let metchQuery = row.textContent.toLowerCase().includes(query)
+            let matchSup = sup !== 'Все поставщики' ? row.dataset.supplier == sup : true
+            return metchQuery && matchSup
+        })
+        let sort = document.getElementById('sort').value
+
+        if (sort == 'asc') filtered.sort((a, b) => a.dataset.stock - b.dataset.stock)
+        if (sort == 'desc') filtered.sort((a, b) => b.dataset.stock - a.dataset.stock)
+
+        let table = document.querySelector('table tbody')
+        table.innerHTML = ''
+
+        filtered.forEach(row => {
+            table.appendChild(row)
+        });
+    }
+    document.getElementById('search').oninput = update
+    document.getElementById('supplier').onchange = update
+    document.getElementById('sort').onchange = update
+
+</script>
+{% endblock%}
