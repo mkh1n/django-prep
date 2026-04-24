@@ -17,8 +17,8 @@ def product_add(request):
         if form.is_valid():
             form.save()
             return redirect('products:product_list')
-        else:
-            form = ProductForm()
+    else:
+        form = ProductForm()
     return render(request, 'products/product_form.html', {'form': form, 'title': 'Добавление товара'})
 
 def product_edit(request, pk):

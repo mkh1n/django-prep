@@ -1055,6 +1055,9 @@ templates/
             <div class="d-flex align-items-center gap-2">
                 <img src="/static/products/Icon.JPG" width="30" height="24">
                 <a class="navbar-brand" href="#">Магазин обуви</a>
+                {% if user.is_admin_user%}
+                | <a href="{% url 'products:product_add' %}">Добавить товар</a>
+                {% endif %}
             </div>
             
             <!-- Правая часть навигации -->
