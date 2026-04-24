@@ -1,1 +1,1 @@
-venv
+Nothing needs to be added to .gitignore since only a README.md file was added, which is a source/config file and should not be ignored.
