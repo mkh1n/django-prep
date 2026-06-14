@@ -481,30 +481,25 @@ class Product(models.Model):
 # Кастомная модель пользователя
 # Наследуется от AbstractUser для расширения стандартной модели
 class User(AbstractUser):
-    # Выбор ролей пользователя
     ROLE_CHOICES = [
         ('client', 'Авторизованный клиент'),
         ('manager', 'Менеджер'),
         ('admin', 'Администратор'),
     ]
     
-    # Поле роли с выбором из списка
     role = models.CharField(max_length=50, choices=ROLE_CHOICES, verbose_name='Роль')
 
     @property
     def is_admin_user(self):
-        # Проверка: является ли пользователь администратором
-        return self.role == 'Администратор'
+        return self.role == 'admin'  # ✅ сравниваем с ключом из БД
 
     @property
     def is_manager(self):
-        # Проверка: является ли пользователь менеджером
-        return self.role == 'Менеджер'
+        return self.role == 'manager'  # ✅
 
     @property
     def is_team(self):
-        # Проверка: является ли пользователь частью команды (менеджер или админ)
-        return self.role in ['Менеджер', 'Администратор']
+        return self.role in ['manager', 'admin']  # ✅
 ```
 
 **Комментарии к типам полей:**
@@ -1528,28 +1523,38 @@ with open('data/products.csv', 'r', encoding='utf-8-sig') as f:
 ```python
 import django, csv, os
 
-# Настройка Django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'shoestore.settings')
 django.setup()
 
-# Импортируем модель пользователя
 from products.models import User
 
-# Открываем CSV с пользователями
+# Создаём словарь для преобразования русских ролей в английские
+ROLE_MAPPING = {
+    'Администратор': 'admin',
+    'Менеджер': 'manager',
+    'Авторизованный клиент': 'client',
+    'Клиент': 'client',  # на всякий случай
+}
+
 with open('data/users.csv', 'r', encoding='utf-8-sig') as f:
     for row in csv.DictReader(f, delimiter=';'):
-        # Создаём пользователя
-        # create_user хэширует пароль автоматически!
+        russian_role = row['Роль сотрудника'].strip()
+        english_role = ROLE_MAPPING.get(russian_role, 'client')  # по умолчанию client
+        
+        # Разбор ФИО (с защитой от ошибок)
+        fio_parts = row['ФИО'].split()
+        first_name = fio_parts[0] if len(fio_parts) > 0 else ''
+        last_name = ' '.join(fio_parts[1:]) if len(fio_parts) > 1 else ''
+        
         User.objects.create_user(
-            username=row['Логин'].strip(),           # Имя пользователя
-            password=row['Пароль'].strip(),          # Пароль (будет захэширован)
-            first_name=row['ФИО'].split(' ')[0],     # Фамилия (первая часть ФИО)
-            last_name=row['ФИО'].split(' ')[1] + ' ' + row['ФИО'].split(' ')[2],  # Имя и Отчество
-            role=row['Роль сотрудника'].strip(),     # Роль
+            username=row['Логин'].strip(),
+            password=row['Пароль'].strip(),
+            first_name=first_name,
+            last_name=last_name,
+            role=english_role,  # ✅ теперь правильное значение
         )
         
-        # Сообщение об успехе
-        print(f"Успешно загружен {row['Логин']}")
+        print(f"Успешно загружен {row['Логин']} (роль: {english_role})")
 ```
 
 ### 13.4 Запуск импорта
